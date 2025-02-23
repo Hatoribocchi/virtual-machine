@@ -25,7 +25,7 @@ namespace VM
         MUL,
         DIV,
         AND,
-        OR,
+        OR, 
         NOT,
         SHL,
         SHR,
@@ -86,52 +86,52 @@ namespace VM
     {
         __forceinline void Push( T const& Element )
         {
-            if ( iIndex >= iSize )
+            if ( m_iIndex >= iSize )
                 throw std::out_of_range( "Stack overflow" );
 
-            arrElements.at( iIndex++ ) = Element;
+            m_arrElements.at( m_iIndex++ ) = Element;
         }
 
         __forceinline T Pop( )
         {
-            if ( iIndex == 0 )
+            if ( m_iIndex == 0 )
                 throw std::out_of_range( "Stack underflow" );
 
-            return arrElements.at( --iIndex );
+            return m_arrElements.at( --m_iIndex );
         }
 
         __forceinline bool IsEmpty( ) const
         {
-            return iIndex == 0;
+            return m_iIndex == 0;
         }
 
         __forceinline size_t Size( ) const
         {
-            return iIndex;
+            return m_iIndex;
         }
 
         __forceinline T& Top( )
         {
-            if ( iIndex == 0 )
+            if ( m_iIndex == 0 )
                 throw std::out_of_range( "Stack underflow" );
 
-            return arrElements.at( iIndex - 1 );
+            return m_arrElements.at( m_iIndex - 1 );
         }
 
-        std::array<T, iSize>    arrElements{ };
-        size_t                  iIndex{ };
+        std::array<T, iSize>    m_arrElements{ };
+        size_t                  m_iIndex{ };
     };
 
     class CMachine
     {
     public:
-        CMachine( const std::vector<uint8_t>& vecProgram ) : vecCode( vecProgram ) { }
+        CMachine( const std::vector<uint8_t>& vecProgram ) : m_vecCode( vecProgram ) { }
 
         void Execute( )
         {
-            while ( iInstructionPointer < vecCode.size( ) )
+            while ( m_iInstructionPointer < m_vecCode.size( ) )
             {
-                EInstructions Instruction = static_cast< EInstructions >( vecCode.at( iInstructionPointer++ ) );
+                EInstructions Instruction = static_cast< EInstructions >( m_vecCode.at( m_iInstructionPointer++ ) );
 
                 switch ( Instruction )
                 {
@@ -140,16 +140,16 @@ namespace VM
                 case EInstructions::PUSH:
                 {
                     int32_t iValue = ReadBit32( );
-                    Stack.Push( iValue );
+                    m_Stack.Push( iValue );
                     break;
                 }
                 case EInstructions::PUSHREG:
                 {
                     uint8_t Reg = ReadBit8( );
-                    if ( Reg >= arrRegisters.size( ) )
+                    if ( Reg >= m_arrRegisters.size( ) )
                         throw std::runtime_error( "Invalid register" );
 
-                    Stack.Push( arrRegisters.at( Reg ) );
+                    m_Stack.Push( m_arrRegisters.at( Reg ) );
                     break;
                 }
                 case EInstructions::MOV:
@@ -157,10 +157,10 @@ namespace VM
                     uint8_t uiDstReg = ReadBit8( );
                     uint8_t uiSrcReg = ReadBit8( );
 
-                    if ( uiDstReg >= arrRegisters.size( ) || uiSrcReg >= arrRegisters.size( ) )
+                    if ( uiDstReg >= m_arrRegisters.size( ) || uiSrcReg >= m_arrRegisters.size( ) )
                         throw std::runtime_error( "Invalid register" );
 
-                    arrRegisters.at( uiDstReg ) = arrRegisters.at( uiSrcReg );
+                    m_arrRegisters.at( uiDstReg ) = m_arrRegisters.at( uiSrcReg );
                     break;
                 }
                 case EInstructions::LEA:
@@ -168,166 +168,166 @@ namespace VM
                     uint8_t uiReg = ReadBit8( );
                     int32_t iAddress = ReadBit32( );
 
-                    if ( uiReg >= arrRegisters.size( ) )
+                    if ( uiReg >= m_arrRegisters.size( ) )
                         throw std::runtime_error( "Invalid register" );
 
-                    arrRegisters.at( uiReg ) = iAddress;
+                    m_arrRegisters.at( uiReg ) = iAddress;
                     break;
                 }
                 case EInstructions::POP:
                 {
-                    Stack.Pop( );
+                    m_Stack.Pop( );
                     break;
                 }
                 case EInstructions::POPREG:
                 {
                     uint8_t uiReg = ReadBit8( );
-                    if ( uiReg >= arrRegisters.size( ) )
+                    if ( uiReg >= m_arrRegisters.size( ) )
                         throw std::runtime_error( "Invalid register" );
 
-                    arrRegisters.at( uiReg ) = Stack.Pop( );
+                    m_arrRegisters.at( uiReg ) = m_Stack.Pop( );
                     break;
                 }
                 case EInstructions::ADD:
                 {
-                    if ( Stack.Size( ) < 2 )
+                    if ( m_Stack.Size( ) < 2 )
                         throw std::runtime_error( "Stack underflow" );
 
-                    int32_t iA = Stack.Pop( );
-                    int32_t iB = Stack.Pop( );
+                    int32_t iA = m_Stack.Pop( );
+                    int32_t iB = m_Stack.Pop( );
 
-                    Stack.Push( iA + iB );
+                    m_Stack.Push( iA + iB );
                     break;
                 }
                 case EInstructions::SUB:
                 {
-                    if ( Stack.Size( ) < 2 )
+                    if ( m_Stack.Size( ) < 2 )
                         throw std::runtime_error( "Stack underflow" );
 
-                    int32_t iA = Stack.Pop( );
-                    int32_t iB = Stack.Pop( );
+                    int32_t iA = m_Stack.Pop( );
+                    int32_t iB = m_Stack.Pop( );
 
-                    Stack.Push( iB - iA );
+                    m_Stack.Push( iB - iA );
                     break;
                 }
                 case EInstructions::MUL:
                 {
-                    if ( Stack.Size( ) < 2 )
+                    if ( m_Stack.Size( ) < 2 )
                         throw std::runtime_error( "Stack underflow" );
 
-                    int32_t iA = Stack.Pop( );
-                    int32_t iB = Stack.Pop( );
+                    int32_t iA = m_Stack.Pop( );
+                    int32_t iB = m_Stack.Pop( );
 
-                    Stack.Push( iA * iB );
+                    m_Stack.Push( iA * iB );
                     break;
                 }
                 case EInstructions::DIV:
                 {
-                    if ( Stack.Size( ) < 2 )
+                    if ( m_Stack.Size( ) < 2 )
                         throw std::runtime_error( "Stack underflow" );
 
-                    int32_t iA = Stack.Pop( );
-                    int32_t iB = Stack.Pop( );
+                    int32_t iA = m_Stack.Pop( );
+                    int32_t iB = m_Stack.Pop( );
 
                     if ( iA == 0 )
                         throw std::runtime_error( "Division by zero" );
 
-                    Stack.Push( iB / iA );
+                    m_Stack.Push( iB / iA );
                     break;
                 }
                 case EInstructions::AND:
                 {
-                    if ( Stack.Size( ) < 2 )
+                    if ( m_Stack.Size( ) < 2 )
                         throw std::runtime_error( "Stack underflow" );
 
-                    int32_t iA = Stack.Pop( );
-                    int32_t iB = Stack.Pop( );
+                    int32_t iA = m_Stack.Pop( );
+                    int32_t iB = m_Stack.Pop( );
 
-                    Stack.Push( iA & iB );
+                    m_Stack.Push( iA & iB );
                     break;
                 }
                 case EInstructions::OR:
                 {
-                    if ( Stack.Size( ) < 2 )
+                    if ( m_Stack.Size( ) < 2 )
                         throw std::runtime_error( "Stack underflow" );
 
-                    int32_t iA = Stack.Pop( );
-                    int32_t iB = Stack.Pop( );
+                    int32_t iA = m_Stack.Pop( );
+                    int32_t iB = m_Stack.Pop( );
 
-                    Stack.Push( iA | iB );
+                    m_Stack.Push( iA | iB );
                     break;
                 }
                 case EInstructions::NOT:
                 {
-                    if ( Stack.IsEmpty( ) )
+                    if ( m_Stack.IsEmpty( ) )
                         throw std::runtime_error( "Stack underflow" );
 
-                    int32_t iA = Stack.Pop( );
-                    Stack.Push( ~iA );
+                    int32_t iA = m_Stack.Pop( );
+                    m_Stack.Push( ~iA );
                     break;
                 }
                 case EInstructions::SHL:
                 {
-                    if ( Stack.Size( ) < 2 )
+                    if ( m_Stack.Size( ) < 2 )
                         throw std::runtime_error( "Stack underflow" );
 
-                    int32_t iA = Stack.Pop( );
-                    int32_t iB = Stack.Pop( );
+                    int32_t iA = m_Stack.Pop( );
+                    int32_t iB = m_Stack.Pop( );
 
-                    Stack.Push( iB << iA );
+                    m_Stack.Push( iB << iA );
                     break;
                 }
                 case EInstructions::SHR:
                 {
-                    if ( Stack.Size( ) < 2 )
+                    if ( m_Stack.Size( ) < 2 )
                         throw std::runtime_error( "Stack underflow" );
 
-                    int32_t iA = Stack.Pop( );
-                    int32_t iB = Stack.Pop( );
+                    int32_t iA = m_Stack.Pop( );
+                    int32_t iB = m_Stack.Pop( );
 
-                    Stack.Push( iB >> iA );
+                    m_Stack.Push( iB >> iA );
                     break;
                 }
                 case EInstructions::JMP:
                 {
-                    if ( Stack.IsEmpty( ) )
+                    if ( m_Stack.IsEmpty( ) )
                         throw std::runtime_error( "Stack underflow" );
 
                     int32_t iOffset = ReadBit32( );
-                    iInstructionPointer = iOffset;
+                    m_iInstructionPointer = iOffset;
                     break;
                 }
                 case EInstructions::JZ:
                 {
-                    if ( Stack.IsEmpty( ) )
+                    if ( m_Stack.IsEmpty( ) )
                         throw std::runtime_error( "Stack underflow" );
 
                     int32_t iOffset = ReadBit32( );
-                    if ( Stack.Top( ) == 0 )
-                        iInstructionPointer = iOffset;
+                    if ( m_Stack.Top( ) == 0 )
+                        m_iInstructionPointer = iOffset;
 
                     break;
                 }
                 case EInstructions::JNZ:
                 {
-                    if ( Stack.IsEmpty( ) )
+                    if ( m_Stack.IsEmpty( ) )
                         throw std::runtime_error( "Stack underflow" );
 
                     int32_t iOffset = ReadBit32( );
-                    if ( Stack.Top( ) != 0 )
-                        iInstructionPointer = iOffset;
+                    if ( m_Stack.Top( ) != 0 )
+                        m_iInstructionPointer = iOffset;
 
                     break;
                 }
                 case EInstructions::CMP:
                 {
-                    if ( Stack.Size( ) < 2 )
+                    if ( m_Stack.Size( ) < 2 )
                         throw std::runtime_error( "Stack underflow" );
 
-                    int32_t iA = Stack.Pop( );
-                    int32_t iB = Stack.Pop( );
+                    int32_t iA = m_Stack.Pop( );
+                    int32_t iB = m_Stack.Pop( );
 
-                    Stack.Push( static_cast< int32_t >( iB == iA ) );
+                    m_Stack.Push( static_cast< int32_t >( iB == iA ) );
                     break;
                 }
                 default:
@@ -342,23 +342,23 @@ namespace VM
 
         const auto GetStack( )
         {
-            return Stack.arrElements;
+            return m_Stack.m_arrElements;
         }
 
         const auto GetRegister( ERegisters Register )
         {
-            return arrRegisters.at( Register );
+            return m_arrRegisters.at( Register );
         }
 
     private:
-        FixedStack_t<int32_t, 2048> Stack{ };
-        std::vector<uint8_t>        vecCode{ };
-        std::array<int32_t, 8>      arrRegisters{ };
-        size_t                      iInstructionPointer{ };
+        FixedStack_t<int32_t, 2048> m_Stack{ };
+        std::vector<uint8_t>        m_vecCode{ };
+        std::array<int32_t, 8>      m_arrRegisters{ };
+        size_t                      m_iInstructionPointer{ };
 
         uint8_t ReadBit8( )
         {
-            return vecCode.at( iInstructionPointer++ );
+            return m_vecCode.at( m_iInstructionPointer++ );
         }
 
         int32_t ReadBit32( )
@@ -366,7 +366,7 @@ namespace VM
             int32_t iValue = 0;
 
             for ( int i = 0; i < 4; ++i )
-                iValue |= static_cast< int32_t >( vecCode.at( iInstructionPointer++ ) ) << ( 8 * i );
+                iValue |= static_cast< int32_t >( m_vecCode.at( m_iInstructionPointer++ ) ) << ( 8 * i );
 
             return iValue;
         }
@@ -374,10 +374,65 @@ namespace VM
         void Trace( EInstructions Instruction )
         {
             std::cout
-                << "Instruction: " << static_cast< int >( Instruction )
-                << ", IP: " << iInstructionPointer
-                << ", Stack size: " << Stack.Size( )
+                << "Instruction: "  << static_cast< int >( Instruction )
+                << ", IP: "         << m_iInstructionPointer
+                << ", Stack size: " << m_Stack.Size( )
                 << std::endl;
         }
     };
+}
+
+int main( )
+{
+    VM::CProgramBuilder Builder;
+
+    const std::vector<uint8_t>& vecBytecode = Builder
+        .Instruction( VM::EInstructions::PUSH )
+        .Bit32( 10 )
+
+        .Instruction( VM::EInstructions::PUSH )
+        .Bit32( 20 )
+
+        .Instruction( VM::EInstructions::ADD )
+
+        .Instruction( VM::EInstructions::POPREG )
+        .Bit8( VM::ERegisters::R0 )
+
+        .Instruction( VM::EInstructions::PUSH )
+        .Bit32( 5 )
+
+        .Instruction( VM::EInstructions::PUSHREG )
+        .Bit8( VM::ERegisters::R0 )
+
+        .Instruction( VM::EInstructions::ADD )
+
+        .Instruction( VM::EInstructions::POPREG )
+        .Bit8( VM::ERegisters::R0 )
+
+        .Instruction( VM::EInstructions::PUSH )
+        .Bit32( 35 )
+
+        .Instruction( VM::EInstructions::PUSHREG )
+        .Bit8( VM::ERegisters::R0 )
+
+        .Instruction( VM::EInstructions::CMP )
+
+        .Instruction( VM::EInstructions::JNZ )
+        .Bit32( 0 )
+
+        .Instruction( VM::EInstructions::HALT )
+        .GetBytecode( );
+
+    VM::CMachine Machine( vecBytecode );
+
+    try
+    {
+        Machine.Execute( );
+    }
+    catch ( const std::exception& e )
+    {
+        std::cerr << "VM error: " << e.what( ) << std::endl;
+    }
+
+    return 0;
 }
